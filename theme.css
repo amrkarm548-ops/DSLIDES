@@ -1,0 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap');
+
+:root{
+  --navy:#13254D;
+  --royal:#1F4FA8;
+  --teal:#0F8B8D;
+  --gold:#B8923E;
+  --ink:#1C2A44;
+  --soft:#F3F6FB;
+  --line:#DCE3EE;
+  --rose:#B23A48;
+}
+
+html,body{margin:0;padding:0;overflow:hidden;background:#FFFFFF;}
+body{font-family:'Source Sans 3',sans-serif;color:var(--ink);}
+.serif{font-family:'Playfair Display',Georgia,serif;}
+p{margin:0;}
+ul{margin:0;padding:0;list-style:none;}
+
+/* Subtle, formal entrance animations */
+@keyframes fxUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+@keyframes fxFade{from{opacity:0;}to{opacity:1;}}
+.fx{animation:fxUp .9s cubic-bezier(.2,.7,.2,1) both;}
+.ff{animation:fxFade 1.2s ease both;}
+.d1{animation-delay:.12s;}
+.d2{animation-delay:.24s;}
+.d3{animation-delay:.36s;}
+.d4{animation-delay:.48s;}
+.d5{animation-delay:.6s;}
+.d6{animation-delay:.72s;}
+.d7{animation-delay:.84s;}
+.d8{animation-delay:.96s;}

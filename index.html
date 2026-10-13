@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goiter — Complete Medical Presentation</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#0b1220;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;color:#fff;overflow:hidden}
+  #stage{position:fixed;inset:0 0 56px 0;display:flex;align-items:center;justify-content:center;background:radial-gradient(1200px 700px at 50% 40%,#16233f 0%,#0b1220 70%)}
+  #frameWrap{position:relative;width:1920px;height:1080px;flex:0 0 auto;transform-origin:center center;box-shadow:0 24px 80px rgba(0,0,0,.55);background:#fff}
+  iframe{width:1920px;height:1080px;border:0;display:block;background:#fff}
+  /* مناطق تنقّل شفافة على الطرفين (لا تغيّر محتوى الشريحة) */
+  .zone{position:absolute;top:0;bottom:0;width:110px;z-index:5;cursor:pointer;background:transparent;border:0}
+  #zonePrev{right:0}#zoneNext{left:0}
+  .zone:hover{background:linear-gradient(to left,rgba(19,37,77,.10),transparent)}
+  #zoneNext:hover{background:linear-gradient(to right,rgba(19,37,77,.10),transparent)}
+  #bar{position:fixed;right:0;left:0;bottom:0;height:56px;display:flex;align-items:center;gap:10px;padding:0 14px;background:rgba(10,17,32,.96);border-top:1px solid rgba(255,255,255,.09);direction:ltr}
+  button{appearance:none;border:1px solid rgba(255,255,255,.16);background:#182642;color:#fff;border-radius:10px;height:38px;padding:0 14px;font-size:15px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+  button:hover{background:#22355c} button:disabled{opacity:.35;cursor:default}
+  #title{font-size:14px;color:#c9d6f2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto}
+  #counter{font-variant-numeric:tabular-nums;font-size:14px;color:#eaf0ff;white-space:nowrap}
+  #progress{position:fixed;top:0;right:0;height:3px;background:#c9a24b;z-index:50;transition:width .25s ease}
+  .spacer{flex:1}
+  /* نظرة عامة */
+  #overview{position:fixed;inset:0;background:rgba(6,10,20,.97);z-index:100;display:none;overflow:auto;padding:26px}
+  #overview.open{display:block}
+  #overview h2{margin:0 0 18px;font-size:20px;font-weight:700}
+  #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+  .card{background:#13203a;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px;cursor:pointer;text-align:right;color:#fff;font-family:inherit}
+  .card:hover{border-color:#c9a24b}
+  .card b{display:block;font-size:22px;color:#c9a24b;margin-bottom:6px}
+  .card span{font-size:14px;color:#dbe6ff;line-height:1.5;word-break:break-word}
+  .card.current{outline:2px solid #c9a24b}
+  #hint{position:fixed;bottom:66px;left:50%;transform:translateX(-50%);background:rgba(10,17,32,.85);border:1px solid rgba(255,255,255,.14);padding:8px 16px;border-radius:999px;font-size:13px;color:#c9d6f2;z-index:40;transition:opacity .6s;white-space:nowrap}
+  @media (max-width:640px){#title{display:none}.zone{width:64px}}
+</style>
+</head>
+<body>
+<div id="progress" style="width:0"></div>
+
+<div id="stage">
+  <div id="frameWrap">
+    <iframe id="slide" title="Slide" allowfullscreen></iframe>
+    <button class="zone" id="zonePrev" aria-label="السابق" title="الشريحة السابقة"></button>
+    <button class="zone" id="zoneNext" aria-label="التالي" title="الشريحة التالية"></button>
+  </div>
+</div>
+
+<div id="hint">التنقّل: الأسهم ← → أو مسافة &nbsp;•&nbsp; F لملء الشاشة &nbsp;•&nbsp; Home / End للأولى والأخيرة</div>
+
+<div id="bar">
+  <button id="prevBtn">‹ Prev</button>
+  <button id="nextBtn">Next ›</button>
+  <span id="counter">– / –</span>
+  <span id="title">Loading…</span>
+  <div class="spacer"></div>
+  <button id="gridBtn">☰ Slides</button>
+  <button id="restartBtn" title="إعادة تشغيل أنيميشن الشريحة الحالية">↻ Replay</button>
+  <button id="fsBtn">⛶ Fullscreen</button>
+</div>
+
+<div id="overview"><h2>كل الشرائح — اختر شريحة للانتقال إليها</h2><div id="grid"></div></div>
+
+<script>
+const iframe = document.getElementById('slide');
+const wrap = document.getElementById('frameWrap');
+const counter = document.getElementById('counter');
+const titleEl = document.getElementById('title');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const progress = document.getElementById('progress');
+const overview = document.getElementById('overview');
+const grid = document.getElementById('grid');
+let slides = [], labels = [], idx = 0;
+
+function fit(){
+  const stage = document.getElementById('stage');
+  const s = Math.min(stage.clientWidth/1920, stage.clientHeight/1080);
+  wrap.style.transform = 'scale(' + s + ')';
+}
+addEventListener('resize', fit);
+
+function show(i, push=true){
+  if(!slides.length) return;
+  idx = Math.max(0, Math.min(slides.length-1, i));
+  // إعادة تعيين src في كل مرة = إعادة تشغيل أنيميشن الشريحة من البداية كما هو
+  iframe.src = slides[idx];
+  counter.textContent = (idx+1) + ' / ' + slides.length;
+  titleEl.textContent = labels[idx] || slides[idx];
+  prevBtn.disabled = idx === 0;
+  nextBtn.disabled = idx === slides.length-1;
+  progress.style.width = ((idx+1)/slides.length*100) + '%';
+  document.querySelectorAll('.card').forEach((c,k)=>c.classList.toggle('current', k===idx));
+  if(push) history.replaceState(null,'','#'+(idx+1));
+}
+const next = ()=>show(idx+1), prev = ()=>show(idx-1);
+
+nextBtn.onclick = next; prevBtn.onclick = prev;
+document.getElementById('zoneNext').onclick = next;
+document.getElementById('zonePrev').onclick = prev;
+document.getElementById('restartBtn').onclick = ()=>show(idx,false);
+document.getElementById('fsBtn').onclick = ()=>{
+  if(document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
+};
+document.getElementById('gridBtn').onclick = ()=>overview.classList.toggle('open');
+overview.addEventListener('click', e=>{ if(e.target===overview) overview.classList.remove('open'); });
+
+addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){ e.preventDefault(); document.dir==='rtl' ? prev() : next(); }
+  else if(e.key==='ArrowLeft'||e.key==='PageUp'){ e.preventDefault(); document.dir==='rtl' ? next() : prev(); }
+  else if(e.key==='Home') show(0);
+  else if(e.key==='End') show(slides.length-1);
+  else if(e.key==='Escape') overview.classList.remove('open');
+  else if(e.key.toLowerCase()==='f') document.getElementById('fsBtn').click();
+});
+// لمس / سحب
+let tx=null;
+addEventListener('touchstart', e=>tx=e.touches[0].clientX, {passive:true});
+addEventListener('touchend', e=>{
+  if(tx===null) return; const dx=e.changedTouches[0].clientX-tx; tx=null;
+  if(Math.abs(dx)>60) (dx<0 ? next : prev)();
+}, {passive:true});
+addEventListener('wheel', e=>{
+  if(overview.classList.contains('open')) return;
+  if(Math.abs(e.deltaY)>40){ e.deltaY>0 ? next() : prev(); }
+}, {passive:true});
+setTimeout(()=>document.getElementById('hint').style.opacity='0', 5000);
+
+fetch('manifest.json').then(r=>r.json()).then(async m=>{
+  slides = m.playlist;
+  document.title = (m.metadata && m.metadata.title) || document.title;
+  // عناوين الشرائح من data-screen-label داخل كل ملف (للقراءة فقط — دون تعديل أي ملف)
+  labels = await Promise.all(slides.map(async f=>{
+    try{
+      const t = await (await fetch(f)).text();
+      const mm = t.match(/data-screen-label="([^"]+)"/);
+      return mm ? mm[1] : f.replace('.html','');
+    }catch(_){ return f.replace('.html',''); }
+  }));
+  grid.innerHTML = '';
+  labels.forEach((lab,i)=>{
+    const c = document.createElement('button');
+    c.className='card';
+    c.innerHTML = '<b>'+(i+1)+'</b><span></span>';
+    c.querySelector('span').textContent = lab.replace(/^\d+\s*/,'');
+    c.onclick = ()=>{ overview.classList.remove('open'); show(i); };
+    grid.appendChild(c);
+  });
+  const start = parseInt((location.hash||'').replace('#',''),10);
+  fit();
+  show(isNaN(start)?0:start-1, false);
+}).catch(()=>{
+  titleEl.textContent = 'تعذّر تحميل manifest.json — شغّل العرض عبر خادم محلي (راجع README)';
+});
+fit();
+</script>
+</body>
+</html>

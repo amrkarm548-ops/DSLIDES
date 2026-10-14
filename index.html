@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goiter — Complete Medical Presentation</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#121a2e;--line:#2b3855;--text:#f4f6fb;--muted:#aab6cf;--gold:#c7a45a}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+.app{height:100dvh;display:flex;flex-direction:column}
+.stage{min-height:0;flex:1;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at center,#17223d 0%,#090e1a 72%)}
+.slide-box{position:relative;overflow:hidden;flex:none;background:#fff;box-shadow:0 16px 64px #0008}
+iframe{position:absolute;top:0;left:0;width:1920px;height:1080px;border:0;transform-origin:top left;background:white}
+.toolbar{min-height:66px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 18px;background:var(--panel);border-top:1px solid var(--line)}
+.brand{min-width:0;display:flex;flex-direction:column;gap:2px}.brand strong{font-size:14px;letter-spacing:.02em}.brand span{font-size:12px;color:var(--muted)}
+.controls{display:flex;align-items:center;gap:9px}
+button{font:inherit;color:var(--text);background:#202c47;border:1px solid #354563;border-radius:9px;padding:9px 13px;cursor:pointer}
+button:hover:not(:disabled){background:#2b3b5e;border-color:#61769e}
+button:disabled{opacity:.38;cursor:not-allowed}
+#counter{font-variant-numeric:tabular-nums;color:var(--muted);min-width:76px;text-align:center;font-size:13px}
+#progress{height:3px;background:#26334f}.bar{height:100%;width:0;background:var(--gold);transition:width .18s}
+@media(max-width:620px){.toolbar{min-height:62px;padding:8px;gap:6px}.brand span{display:none}.brand strong{font-size:12px}.controls{gap:5px}button{padding:8px 10px}#counter{min-width:58px;font-size:12px}.fullscreen{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <main class="stage" id="stage"><div class="slide-box" id="slideBox"><iframe id="slide" title="Goiter presentation slide" allowfullscreen></iframe></div></main>
+  <div id="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
+  <nav class="toolbar" aria-label="Presentation controls">
+    <div class="brand"><strong>GOITER · MEDICAL PRESENTATION</strong><span id="slideName">Opening slide</span></div>
+    <div class="controls">
+      <button id="prev" type="button" aria-label="Previous slide" title="Previous slide (←)">← Prev</button>
+      <span id="counter" aria-live="polite">1 / 41</span>
+      <button id="next" type="button" aria-label="Next slide" title="Next slide (→ or Space)">Next →</button>
+      <button class="fullscreen" id="full" type="button" title="Toggle fullscreen">⛶ Fullscreen</button>
+    </div>
+  </nav>
+</div>
+<script>
+const playlist = ["cover.html","contents.html","thyroid-gland.html","global-burden.html","clinical-importance.html","definition.html","descriptive-terms-1.html","descriptive-terms-2.html","risk-factors-1.html","risk-factors-2.html","iodine-pathway.html","causes-1.html","causes-2.html","who-grading.html","classification.html","local-effects-1.html","local-effects-2.html","hypo-vs-hyper.html","red-flags.html","complications-1.html","complications-2.html","postsurgical-complications.html","diagnosis-pathway.html","history-exam.html","laboratory-tests.html","ultrasound-scan.html","ct-xray.html","fnab.html","medical-management-1.html","medical-management-2.html","surgery.html","nursing-divider.html","preop-care.html","postop-airway.html","postop-hypocalcemia.html","postop-recovery.html","nursing-pearls.html","prevention-1.html","prevention-2.html","references.html","thank-you.html"];
+const slideTitles = ["Cover","Contents","Thyroid Gland","Global Burden","Clinical Importance","Definition","Descriptive Terms (1)","Descriptive Terms (2)","Risk Factors (1)","Risk Factors (2)","Iodine Pathway","Causes (1)","Causes (2)","WHO Grading","Classification","Local Effects (1)","Local Effects (2)","Hypothyroidism vs Hyperthyroidism","Red Flags","Complications (1)","Complications (2)","Postsurgical Complications","Diagnosis Pathway","History and Examination","Laboratory Tests","Ultrasound Scan","CT and X-ray","Fine-Needle Aspiration Biopsy","Medical Management (1)","Medical Management (2)","Surgery","Nursing Management","Preoperative Care","Postoperative Airway","Postoperative Hypocalcemia","Postoperative Recovery","Nursing Pearls","Prevention (1)","Prevention (2)","References","Thank You"];
+const frame=document.getElementById("slide"), box=document.getElementById("slideBox"), stage=document.getElementById("stage");
+const prev=document.getElementById("prev"),next=document.getElementById("next"),counter=document.getElementById("counter"),bar=document.getElementById("bar"),name=document.getElementById("slideName");
+let current=0;
+function fitSlide(){const scale=Math.min(stage.clientWidth/1920,stage.clientHeight/1080);box.style.width=(1920*scale)+"px";box.style.height=(1080*scale)+"px";frame.style.transform="scale("+scale+")"}
+function show(i){current=Math.max(0,Math.min(playlist.length-1,i));frame.src="slides/"+playlist[current];counter.textContent=(current+1)+" / "+playlist.length;name.textContent=slideTitles[current]||playlist[current];bar.style.width=((current+1)/playlist.length*100)+"%";prev.disabled=current===0;next.disabled=current===playlist.length-1;document.title=(slideTitles[current]||"Slide")+" — Goiter Presentation"}
+prev.addEventListener("click",()=>show(current-1));next.addEventListener("click",()=>show(current+1));
+document.getElementById("full").addEventListener("click",async()=>{try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen();else await document.exitFullscreen()}catch(e){}});
+document.addEventListener("keydown",e=>{if(["ArrowRight","PageDown"," "].includes(e.key)){e.preventDefault();show(current+1)}else if(["ArrowLeft","PageUp"].includes(e.key)){e.preventDefault();show(current-1)}else if(e.key==="Home"){show(0)}else if(e.key==="End"){show(playlist.length-1)}});
+window.addEventListener("resize",fitSlide);fitSlide();show(0);
+</script>
+</body>
+</html>
